@@ -133,7 +133,7 @@ public class UnusedProcess {
                 return dailyAssetAmounts;
             }
         };
-    }
+    } // 특정 리소스 id 기반으로 지정된 동안(이번 달)의 리소스 사용량 정보를 조회
 
     @Bean
     @StepScope
@@ -188,8 +188,7 @@ public class UnusedProcess {
                     String cleintErrorMsg = clientError.getMessage();
                     log.error("FAIL TO CALL COST SELECTOR - UNUSED API : " + cleintErrorMsg);
                 }
-            }
+            } //http://localhost:8083로 리소스 비용 데이터를 기반으로, 시스템에 api 요청
         };
     }
-
 }
