@@ -133,9 +133,10 @@ public class GcpSetupService {
         if (!runStep(steps, "Save to OpenBao (cost/gcp)", () -> {
             JsonNode keyNode = MAPPER.readTree(opKeyJson);
             Map<String, String> cost = new HashMap<>(safeRead(() -> openBaoClient.readPath("cost/gcp")));
-            cost.put("project_id",   keyNode.path("project_id").asText());
-            cost.put("client_email", keyNode.path("client_email").asText());
-            cost.put("private_key",  keyNode.path("private_key").asText());
+            cost.put("project_id",      keyNode.path("project_id").asText());
+            cost.put("client_email",    keyNode.path("client_email").asText());
+            cost.put("private_key",     keyNode.path("private_key").asText());
+            cost.put("private_key_id",  keyNode.path("private_key_id").asText());
             openBaoClient.writePath("cost/gcp", cost);
             log.info("[GcpSetup] 운영 SA 저장 완료: {}", keyNode.path("client_email").asText());
         })) return new GcpSetupResult(projectId, null, null, steps);
@@ -339,10 +340,14 @@ public class GcpSetupService {
     // ──────────────────────────────────────────────────────────────────────────
 
     private BigQuery buildBigQuery(String projectId, String email, String privateKey) throws Exception {
+        Map<String, String> cost = safeRead(() -> openBaoClient.readPath("cost/gcp"));
+        String keyId = cost.get("private_key_id");
         PrivateKey pk = parsePemPrivateKey(privateKey);
+        ServiceAccountCredentials.Builder credBuilder = ServiceAccountCredentials.newBuilder()
+                .setClientEmail(email).setPrivateKey(pk).setProjectId(projectId);
+        if (keyId != null && !keyId.isBlank()) credBuilder.setPrivateKeyId(keyId);
         return BigQueryOptions.newBuilder()
-                .setCredentials(ServiceAccountCredentials.newBuilder()
-                        .setClientEmail(email).setPrivateKey(pk).setProjectId(projectId).build())
+                .setCredentials(credBuilder.build())
                 .setProjectId(projectId).build().getService();
     }
 
